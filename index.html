@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab Dashboard — John Lazzaro</title>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --primary-mid: #2563a8;
+    --primary-light: #ebf3fc;
+    --accent: #0ea5e9;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --red-light: #fecaca;
+    --amber: #d97706;
+    --amber-bg: #fffbeb;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --green-light: #bbf7d0;
+    --purple: #7c3aed;
+    --purple-bg: #f5f3ff;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  /* ── HEADER ── */
+  .page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-mid) 100%);
+    color: white;
+    padding: 20px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .page-header-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .page-header h1 { margin: 0 0 4px; font-size: 20px; font-weight: 700; letter-spacing: 0.3px; }
+  .page-header .subtitle { font-size: 12px; opacity: 0.85; max-width: 260px; }
+  .page-header .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+    font-size: 12px;
+    opacity: 0.9;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 10px 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .page-header .meta-grid span { white-space: normal; word-break: break-word; }
+  /* ── ALERT BANNER ── */
+  .clinical-note {
+    background: #fffbeb;
+    border-left: 5px solid #f59e0b;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #78350f;
+    margin: 0;
+    line-height: 1.5;
+  }
+  .clinical-note strong { color: #92400e; }
+  /* ── NAV TABS ── */
+  .tab-bar-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--white);
+    border-bottom: 2px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+  .tab-bar {
+    display: flex;
+    background: var(--white);
+    padding: 0 8px;
+    gap: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 13px 9px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all 0.15s;
+    margin-bottom: -2px;
+    flex-shrink: 0;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .tab-btn:hover { color: var(--primary-mid); }
+  .tab-btn.active {
+    color: white;
+    background: var(--primary-mid);
+    border-bottom-color: var(--primary-mid);
+    border-radius: 6px 6px 0 0;
+  }
+  /* ── CONTENT ── */
+  .tab-pane { display: none; padding: 16px 12px 40px; max-width: 1200px; margin: 0 auto; }
+  .tab-pane.active { display: block; }
+  /* ── SECTION HEADERS ── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--primary-mid);
+    background: var(--primary-light);
+    border-left: 4px solid var(--primary-mid);
+    padding: 7px 12px;
+    margin: 24px 0 12px;
+  }
+  .section-title:first-child { margin-top: 0; }
+  /* ── CARDS ── */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .card .card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 5px; }
+  .card .card-value { font-size: 20px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+  .card .card-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .card.alert { border-color: var(--red-light); background: var(--red-bg); }
+  .card.alert .card-value { color: var(--red); }
+  .card.warn { border-color: #fde68a; background: var(--amber-bg); }
+  .card.warn .card-value { color: var(--amber); }
+  .card.good { border-color: var(--green-light); background: var(--green-bg); }
+  .card.good .card-value { color: var(--green); }
+  /* ── TABLES ── */
+  .tbl-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    /* Hint to user there's more to scroll */
+    background:
+      linear-gradient(to right, white 30%, rgba(255,255,255,0)),
+      linear-gradient(to right, rgba(255,255,255,0), white 70%) 100% 0,
+      radial-gradient(farthest-side at 0% 50%, rgba(0,0,0,.08), transparent),
+      radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.08), transparent) 100% 0;
+    background-repeat: no-repeat;
+    background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+    background-attachment: local, local, scroll, scroll;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 400px; }
+  thead th {
+    background: var(--primary);
+    color: white;
+    padding: 9px 10px;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+  tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) td { background: #f9fbfd; }
+  .td-flag { color: var(--red); font-weight: 700; background: var(--red-bg) !important; }
+  .td-warn { color: var(--amber); font-weight: 600; background: var(--amber-bg) !important; }
+  .td-good { color: var(--green); }
+  .td-na { color: #cbd5e1; font-style: italic; font-size: 11px; }
+  .td-label { font-weight: 600; }
+  /* group rows */
+  .tr-group td { background: #f1f5f9 !important; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); padding: 5px 10px; }
+  /* ── BADGES ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-amber { background: #fde68a; color: #92400e; }
+  .badge-green { background: var(--green-light); color: #14532d; }
+  .badge-blue { background: #bfdbfe; color: #1e40af; }
+  .badge-gray { background: #e2e8f0; color: #475569; }
+  /* ── TREND BARS (mini sparkline) ── */
+  .trend-bar { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
+  .trend-bar span { flex: 1; min-width: 6px; border-radius: 2px 2px 0 0; background: var(--primary-mid); opacity: 0.7; }
+  /* ── CALLOUT BOX ── */
+  .callout {
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 12px;
+    margin-bottom: 14px;
+    border-left: 4px solid;
+    line-height: 1.5;
+  }
+  .callout-red { border-color: var(--red); background: var(--red-bg); color: #7f1d1d; }
+  .callout-green { border-color: var(--green); background: var(--green-bg); color: #14532d; }
+  .callout-blue { border-color: var(--accent); background: var(--primary-light); color: #1e3a5f; }
+  .callout-amber { border-color: var(--amber); background: var(--amber-bg); color: #78350f; }
+  .callout strong { display: block; margin-bottom: 4px; font-size: 12px; }
+  /* ── GRID LAYOUT ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) {
+    .two-col { grid-template-columns: 1fr; }
+    body { font-size: 13px; }
+  }
+  /* ── FAB BUTTONS ── */
+  .fab-group {
+    position: fixed;
+    bottom: 20px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 200;
+  }
+  .fab {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s;
+  }
+  .fab:active { transform: scale(0.93); }
+  .fab-gear { background: var(--primary); color: white; }
+  .fab-pdf  { background: #16a34a; color: white; }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 300;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 20px 32px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+  }
+  .modal h3 { margin: 0 0 4px; font-size: 16px; color: var(--primary); }
+  .modal p { margin: 0 0 16px; font-size: 12px; color: var(--muted); }
+  .modal-checks { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .modal-checks label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .modal-checks input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--primary-mid); cursor: pointer; flex-shrink: 0; }
+  .modal-actions { display: flex; gap: 10px; }
+  .btn-generate {
+    flex: 1;
+    background: var(--primary-mid);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-pdf { background: #16a34a; }
+  .btn-cancel {
+    background: #f1f5f9;
+    color: var(--muted);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  /* print styles injected dynamically by generatePDF() */
+  /* ── TAB BADGES ── */
+  .tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 800;
+    margin-left: 4px;
+    vertical-align: middle;
+    line-height: 1;
+  }
+  .tab-badge-red  { background: var(--red);    color: white; }
+  .tab-badge-warn { background: var(--amber);  color: white; }
+  .tab-badge-blue { background: #2563a8;       color: white; }
+  .tab-btn.active .tab-badge-red  { background: white; color: var(--red); }
+  .tab-btn.active .tab-badge-warn { background: white; color: var(--amber); }
+  .tab-btn.active .tab-badge-blue { background: white; color: #2563a8; }
+  /* ── TREND ARROWS ── */
+  .trend {
+    font-size: 13px;
+    font-weight: 900;
+    margin-right: 2px;
+    vertical-align: middle;
+  }
+  .trend-down-good { color: var(--green); }
+  .trend-up-good   { color: var(--green); }
+  .trend-stable    { color: var(--muted); }
+  .trend-up-warn   { color: var(--amber); }
+  .trend-up-bad    { color: var(--red); }
+  .sort-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+  .sort-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .sort-row input[type="search"] {
+    flex: 1;
+    min-width: 200px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+  }
+  .sort-row input[type="search"]:focus { border-color: var(--primary-mid); box-shadow: 0 0 0 2px rgba(37,99,168,0.12); }
+  .sort-toggles { flex-wrap: wrap; }
+  .sort-bar label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  .sort-bar select {
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .sort-bar .divider { width: 1px; height: 22px; background: var(--border); margin: 0 2px; }
+  .sort-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .sort-toggle input { width: 16px; height: 16px; accent-color: var(--primary-mid); cursor: pointer; }
+  .draw-block { margin-bottom: 4px; }
+  .draw-block.hidden { display: none; }
+  tr.flag-hidden { display: none; }
+  tr.search-hidden { display: none; }
+  /* ── EXPLAIN ROWS ── */
+  .explain-row { display: none; }
+  #raw-blocks-container.explain-on .explain-row { display: table-row; }
+  .explain-td {
+    font-size: 12px;
+    color: #4c1d95;
+    background: var(--purple-bg) !important;
+    line-height: 1.5;
+    padding: 8px 12px 10px 16px !important;
+    border-left: 3px solid var(--purple);
+    font-style: italic;
+  }
+  .detail-note { font-size: 11px; color: var(--muted); margin-top: 2px; font-style: italic; }
+  /* Infection / STI table result styling */
+  .result-negative { color: var(--green); font-weight: 700; }
+  .result-positive { color: var(--red); font-weight: 700; }
+  .result-reactive { color: var(--amber); font-weight: 700; }
+  /* sticky first col */
+  .sticky-col { position: sticky; left: 0; background: var(--white); z-index: 2; }
+  thead .sticky-col { background: var(--primary); }
+  tbody tr:nth-child(even) td.sticky-col { background: #f9fbfd; }
+  tbody tr.td-flag td.sticky-col { background: var(--red-bg); }
+  tbody tr.td-warn td.sticky-col { background: var(--amber-bg); }
+  /* Range pill */
+  .range-pill {
+    font-size: 10px;
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 20px;
+    padding: 1px 7px;
+    display: inline-block;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-header-top">
+    <div>
+      <h1>Clinical Laboratory Dashboard</h1>
+      <div class="subtitle">Comprehensive longitudinal record for physician review — not for self-diagnosis</div>
+    </div>
+  </div>
+  <div class="meta-grid" id="header-meta">
+    <span><strong>Patient:</strong> <em style="opacity:0.6">— import backup to load —</em></span>
+    <span></span>
+    <span></span>
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<div class="clinical-note" id="clinical-note-bar" style="display:none"></div>
+
+<div class="tab-bar-wrap">
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="summary">Summary</button>
+  <button class="tab-btn" data-tab="lipids">Lipids &amp; Cardio</button>
+  <button class="tab-btn" data-tab="metabolic">Metabolic / CMP</button>
+  <button class="tab-btn" data-tab="cbc">CBC / Hematology</button>
+  <button class="tab-btn" data-tab="hormones">Hormones &amp; Thyroid</button>
+  <button class="tab-btn" data-tab="nutrients">Nutrients &amp; Iron</button>
+  <button class="tab-btn" data-tab="autoimmune">Autoimmune / Inflammation</button>
+  <button class="tab-btn" data-tab="infectious">Infectious Disease</button>
+  <button class="tab-btn" data-tab="urinalysis">Urinalysis</button>
+  <button class="tab-btn" data-tab="rawlabs">All Raw Labs</button>
+</nav>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- TAB: SUMMARY -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="summary" class="tab-pane active">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="lipids" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="metabolic" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="cbc" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="hormones" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="nutrients" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="autoimmune" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="infectious" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="urinalysis" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<div id="rawlabs" class="tab-pane">
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:18px;color:#64748b;text-align:center;padding:32px 16px;">
+  <div style="font-size:48px;">📂</div>
+  <div style="font-size:16px;font-weight:700;color:#1a3a5c;">No Lab Data Loaded</div>
+  <div style="font-size:13px;max-width:340px;line-height:1.6;">Import your <code>labs_backup.json</code> file to restore all lab data. Your data never leaves your device.</div>
+  <label style="display:inline-flex;align-items:center;gap:8px;background:#2563a8;color:white;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);">
+    📥 Import Backup
+    <input type="file" accept=".json" onchange="restoreBackup(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:#94a3b8;">or drag &amp; drop anywhere on this page</div>
+</div>
+</div>
+
+<!-- FAB BUTTONS -->
+<div class="fab-group">
+  <button class="fab fab-pdf" title="Export PDF">📄</button>
+  <button class="fab fab-gear" title="Export HTML">⚙️</button>
+</div>
+
+<!-- SETTINGS MODAL (HTML export) -->
+<div id="settingsModal" class="modal-overlay">
+  <div class="modal">
+    <h3>⚙️ Export HTML File</h3>
+    <p>Uncheck tabs to exclude. Downloads a standalone HTML file with only the selected sections.</p>
+    <div class="modal-checks">
+      <label><input type="checkbox" value="summary" checked> Summary</label>
+      <label><input type="checkbox" value="lipids" checked> Lipids &amp; Cardio</label>
+      <label><input type="checkbox" value="metabolic" checked> Metabolic / CMP</label>
+      <label><input type="checkbox" value="cbc" checked> CBC / Hematology</label>
+      <label><input type="checkbox" value="hormones" checked> Hormones &amp; Thyroid</label>
+      <label><input type="checkbox" value="nutrients" checked> Nutrients &amp; Iron</label>
+      <label><input type="checkbox" value="autoimmune" checked> Autoimmune / Inflammation</label>
+      <label><input type="checkbox" value="infectious" checked> Infectious Disease</label>
+      <label><input type="checkbox" value="urinalysis" checked> Urinalysis</label>
+      <label><input type="checkbox" value="rawlabs" checked> All Raw Labs</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" data-close="settingsModal">Cancel</button>
+      <button class="btn-generate">⬇ Download HTML</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF MODAL -->
+<div id="pdfModal" class="modal-overlay">
+  <div class="modal">
+    <h3>📄 Print / Save as PDF</h3>
+    <p>Select sections to include. Opens a print-ready document — use your browser's <strong>Print → Save as PDF</strong>.</p>
+    <div class="modal-checks">
+      <label><input type="checkbox" class="pdf-check" value="summary" checked> Summary &amp; Flags</label>
+      <label><input type="checkbox" class="pdf-check" value="lipids" checked> Lipids &amp; Cardio</label>
+      <label><input type="checkbox" class="pdf-check" value="metabolic" checked> Metabolic / CMP</label>
+      <label><input type="checkbox" class="pdf-check" value="cbc" checked> CBC / Hematology</label>
+      <label><input type="checkbox" class="pdf-check" value="hormones" checked> Hormones &amp; Thyroid</label>
+      <label><input type="checkbox" class="pdf-check" value="nutrients" checked> Nutrients &amp; Iron</label>
+      <label><input type="checkbox" class="pdf-check" value="autoimmune" checked> Autoimmune / Inflammation</label>
+      <label><input type="checkbox" class="pdf-check" value="infectious" checked> Infectious Disease</label>
+      <label><input type="checkbox" class="pdf-check" value="urinalysis" checked> Urinalysis</label>
+      <label><input type="checkbox" class="pdf-check" value="rawlabs"> All Raw Labs</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" data-close="pdfModal">Cancel</button>
+      <button class="btn-generate btn-pdf">🖨 Open Print View</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const pane = document.getElementById(id);
+  if (pane) pane.classList.add('active');
+  const btn = document.querySelector('.tab-btn[data-tab="' + id + '"]');
+  if (btn) btn.classList.add('active');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// Tab delegation — wired after DOM is ready (called at bottom of body)
+function initTabs() {
+  var tabBar = document.querySelector('.tab-bar');
+  if (!tabBar || tabBar._tabsBound) return;
+  tabBar._tabsBound = true;
+  function handleTab(e) {
+    var btn = e.target.closest ? e.target.closest('.tab-btn') : e.target;
+    if (!btn) { btn = e.target; while(btn && !btn.classList.contains('tab-btn')) btn = btn.parentElement; }
+    if (btn && btn.dataset && btn.dataset.tab) {
+      e.preventDefault();
+      showTab(btn.dataset.tab);
+    }
+  }
+  tabBar.addEventListener('click', handleTab);
+  tabBar.addEventListener('touchend', handleTab, false);
+}
+
+function openModal(id) {
+  var m = document.getElementById(id);
+  if (m) m.classList.add('open');
+}
+function closeModal(id) {
+  var m = document.getElementById(id);
+  if (m) m.classList.remove('open');
+}
+
+function initButtons() {
+  if (window._buttonsBound) return; window._buttonsBound = true;
+  // FABs
+  var pdfFab = document.querySelector('.fab-pdf');
+  if (pdfFab) { pdfFab.addEventListener('click', function(){ openModal('pdfModal'); }); pdfFab.addEventListener('touchend', function(e){ e.preventDefault(); openModal('pdfModal'); }, false); }
+  var gearFab = document.querySelector('.fab-gear');
+  if (gearFab) { gearFab.addEventListener('click', function(){ openModal('settingsModal'); }); gearFab.addEventListener('touchend', function(e){ e.preventDefault(); openModal('settingsModal'); }, false); }
+
+  // Modal overlays close on backdrop tap
+  ['pdfModal','settingsModal'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', function(e){ if (e.target === el) closeModal(id); });
+    el.addEventListener('touchend', function(e){ if (e.target === el) { e.preventDefault(); closeModal(id); } }, false);
+  });
+
+  // Cancel buttons (data-close attribute)
+  document.querySelectorAll('.btn-cancel[data-close]').forEach(function(btn) {
+    function doClose(e) { e.preventDefault(); closeModal(btn.getAttribute('data-close')); }
+    btn.addEventListener('click', doClose);
+    btn.addEventListener('touchend', doClose, false);
+  });
+
+  // Sort bar controls
+  var rlSort = document.getElementById('rl-sort');
+  var rlProvider = document.getElementById('rl-provider');
+  var rlFlagged = document.getElementById('rl-flagged');
+  var rlSearch = document.getElementById('rl-search');
+  var rlExplain = document.getElementById('rl-explain');
+  if (rlSort) rlSort.addEventListener('change', applyRawSort);
+  if (rlProvider) rlProvider.addEventListener('change', applyRawSort);
+  if (rlFlagged) rlFlagged.addEventListener('change', applyRawSort);
+  if (rlSearch) rlSearch.addEventListener('input', applyRawSort);
+  if (rlExplain) rlExplain.addEventListener('change', toggleExplain);
+
+  // Generate buttons
+  var genPDF = document.querySelector('.btn-pdf');
+  if (genPDF) { genPDF.addEventListener('click', generatePDF); genPDF.addEventListener('touchend', function(e){ e.preventDefault(); generatePDF(); }, false); }
+  var genExport = document.querySelector('.btn-generate:not(.btn-pdf)');
+  if (genExport) { genExport.addEventListener('click', generateExport); }
+}
+
+function applyRawSort() {
+  const sortEl = document.getElementById('rl-sort');
+  const provEl = document.getElementById('rl-provider');
+  const flagEl = document.getElementById('rl-flagged');
+  const searchEl = document.getElementById('rl-search');
+  if (!sortEl) return;
+  const sortVal  = sortEl.value;
+  const provider = provEl.value;
+  const flagOnly = flagEl.checked;
+  const searchQ  = (searchEl.value || '').toLowerCase().trim();
+  const container = document.getElementById('raw-blocks-container');
+  const blocks = [...container.querySelectorAll('.draw-block')];
+  blocks.forEach(b => {
+    const provMatch = provider === 'all' || b.dataset.provider === provider;
+    let blockHasVisible = false;
+    b.querySelectorAll('tr.row-ok, tr.row-flag').forEach(row => {
+      const isFlag = row.classList.contains('row-flag');
+      const cellText = row.textContent.toLowerCase();
+      const passFlag   = !flagOnly  || isFlag;
+      const passSearch = !searchQ   || cellText.includes(searchQ);
+      const show = passFlag && passSearch;
+      row.classList.toggle('flag-hidden', !show);
+      if (show) blockHasVisible = true;
+    });
+    const hideBlock = !provMatch || ((searchQ || flagOnly) && !blockHasVisible);
+    b.classList.toggle('hidden', hideBlock);
+  });
+  const visible = blocks.filter(b => !b.classList.contains('hidden'));
+  visible.sort((a, b) => {
+    if (sortVal === 'date-asc')      return a.dataset.sortdate.localeCompare(b.dataset.sortdate);
+    if (sortVal === 'date-desc')     return b.dataset.sortdate.localeCompare(a.dataset.sortdate);
+    if (sortVal === 'provider-asc')  return a.dataset.provider.localeCompare(b.dataset.provider) || a.dataset.sortdate.localeCompare(b.dataset.sortdate);
+    if (sortVal === 'flags-desc')    return parseInt(b.dataset.flags) - parseInt(a.dataset.flags) || a.dataset.sortdate.localeCompare(b.dataset.sortdate);
+    return 0;
+  });
+  visible.forEach(b => container.appendChild(b));
+}
+
+function toggleExplain() {
+  const on = document.getElementById('rl-explain').checked;
+  document.getElementById('raw-blocks-container').classList.toggle('explain-on', on);
+  document.getElementById('raw-blocks-container').classList.toggle('explain-off', !on);
+}
+
+function generatePDF() {
+  const checked = [...document.querySelectorAll('.pdf-check:checked')].map(c => c.value);
+  if (!checked.length) { alert('Select at least one section.'); return; }
+  document.getElementById('pdfModal').classList.remove('open');
+
+  const showExplain = document.getElementById('rl-explain') && document.getElementById('rl-explain').checked;
+
+  // Build ID selectors for checked panes only
+  const paneSelectors = checked.map(id => '#' + id).join(', ');
+
+  const printStyle = document.createElement('style');
+  printStyle.id = 'pdf-print-style';
+  printStyle.innerHTML = `
+@media print {
+  /* Hide everything by default */
+  body > * { display: none !important; }
+
+  /* Always show patient header and clinical context */
+  .page-header { display: block !important; margin-bottom: 8px; }
+  .clinical-note { display: block !important; margin-bottom: 12px; }
+
+  /* Show only selected panes */
+  ${paneSelectors} { display: block !important; }
+
+  /* Each selected pane on its own page */
+  ${checked.map((id, i) => '#' + id + ' { page-break-after: ' + (i < checked.length - 1 ? 'always' : 'avoid') + '; }').join(' ')}
+
+  /* Raw labs specifics */
+  .draw-block { display: block !important; page-break-inside: avoid; }
+  .draw-block.hidden { display: block !important; }
+  tr.flag-hidden, tr.search-hidden { display: table-row !important; }
+  .tbl-wrap { overflow: visible !important; background: none !important; }
+  .sort-bar { display: none !important; }
+
+  /* Explain rows */
+  ${showExplain
+    ? '.explain-row { display: table-row !important; } .explain-td { font-size: 10px; color: #4c1d95; background: #f5f3ff !important; padding: 5px 12px 7px 14px !important; border-left: 3px solid #7c3aed; font-style: italic; }'
+    : '.explain-row { display: none !important; }'
+  }
+
+  /* Color accuracy */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  @page { margin: 14mm 12mm; size: A4; }
+}`;
+
+  // Remove any previous print style
+  const old = document.getElementById('pdf-print-style');
+  if (old) old.parentNode.removeChild(old);
+  document.head.appendChild(printStyle);
+
+  // Small delay to ensure style is applied before dialog opens
+  setTimeout(function() {
+    window.print();
+    // Remove style after a generous delay — long enough for any device
+    setTimeout(function() {
+      const s = document.getElementById('pdf-print-style');
+      if (s) s.parentNode.removeChild(s);
+    }, 5000);
+  }, 150);
+}
+
+
+function generateExport() {
+  const checked = [...document.querySelectorAll('#settingsModal input[type=checkbox]:checked')].map(c => c.value);
+  if (!checked.length) { alert('Select at least one tab.'); return; }
+
+  const allBtns = [...document.querySelectorAll('.tab-bar .tab-btn')];
+
+  const btnHTML = allBtns
+    .filter(btn => btn.dataset.tab && checked.includes(btn.dataset.tab))
+    .map((btn, i) => {
+      const id = btn.dataset.tab;
+      const cls = 'tab-btn' + (i === 0 ? ' active' : '');
+      return '<button class="' + cls + '" data-tab="' + id + '">' + btn.innerHTML + '</button>';
+    }).join('\n  ');
+
+  const panesHTML = checked.map((id, i) => {
+    const el = document.getElementById(id);
+    const cls = 'tab-pane' + (i === 0 ? ' active' : '');
+    return '<div id="' + id + '" class="' + cls + '">' + (el ? el.innerHTML : '') + '</div>';
+  }).join('\n');
+
+  const css = document.querySelector('style').innerHTML;
+  const headerHTML = document.querySelector('.page-header').outerHTML;
+  const noteHTML = document.querySelector('.clinical-note').outerHTML;
+
+  const pdfChecks = checked.map(id => {
+    const btn = allBtns.find(b => b.dataset.tab === id);
+    const label = btn ? btn.textContent.trim() : id;
+    return '<label><input type="checkbox" class="pdf-check" value="' + id + '" checked> ' + label + '</label>';
+  }).join('\n      ');
+
+  // Inline JS for exported file — no generateExport, no settings modal
+  const sc = ['<', 'script>'].join('');
+  const sc2 = ['<', '/script>'].join('');
+  const inlineJS = sc + '\n' + [
+    'function showTab(id){',
+    '  document.querySelectorAll(".tab-pane").forEach(function(p){p.classList.remove("active");});',
+    '  document.querySelectorAll(".tab-btn").forEach(function(b){b.classList.remove("active");});',
+    '  var p=document.getElementById(id); if(p) p.classList.add("active");',
+    '  var buttons=document.querySelectorAll(".tab-btn"); for(var i=0;i<buttons.length;i++){if(buttons[i].getAttribute("data-tab")===id){buttons[i].classList.add("active");break;}}',
+    '  window.scrollTo({top:0,behavior:"smooth"});',
+    '}',
+    'function toggleExplain(){',
+    '  var el=document.getElementById("rl-explain");',
+    '  var on=el&&el.checked;',
+    '  var c=document.getElementById("raw-blocks-container");',
+    '  if(c){c.classList.toggle("explain-on",on);c.classList.toggle("explain-off",!on);}',
+    '}',
+    'function applyRawSort(){',
+    '  var se=document.getElementById("rl-sort"); if(!se) return;',
+    '  var sv=se.value, pv=document.getElementById("rl-provider").value;',
+    '  var fo=document.getElementById("rl-flagged").checked;',
+    '  var sq=(document.getElementById("rl-search").value||"").toLowerCase().trim();',
+    '  var con=document.getElementById("raw-blocks-container");',
+    '  var bl=Array.from(con.querySelectorAll(".draw-block"));',
+    '  bl.forEach(function(b){',
+    '    var pm=pv==="all"||b.dataset.provider===pv; var vis=false;',
+    '    b.querySelectorAll("tr.row-ok,tr.row-flag").forEach(function(r){',
+    '      var ok=(!fo||r.classList.contains("row-flag"))&&(!sq||r.textContent.toLowerCase().indexOf(sq)>-1);',
+    '      r.classList.toggle("flag-hidden",!ok); if(ok)vis=true;',
+    '    });',
+    '    b.classList.toggle("hidden",!pm||((sq||fo)&&!vis));',
+    '  });',
+    '  var vis=bl.filter(function(b){return!b.classList.contains("hidden");});',
+    '  vis.sort(function(a,b){',
+    '    if(sv==="date-asc")return a.dataset.sortdate.localeCompare(b.dataset.sortdate);',
+    '    if(sv==="date-desc")return b.dataset.sortdate.localeCompare(a.dataset.sortdate);',
+    '    if(sv==="provider-asc")return a.dataset.provider.localeCompare(b.dataset.provider);',
+    '    if(sv==="flags-desc")return parseInt(b.dataset.flags)-parseInt(a.dataset.flags);',
+    '    return 0;',
+    '  });',
+    '  vis.forEach(function(b){con.appendChild(b);});',
+    '}',
+    'function generatePDF(){',
+    '  var ch=Array.from(document.querySelectorAll(".pdf-check:checked")).map(function(c){return c.value;});',
+    '  if(!ch.length){alert("Select at least one.");return;}',
+    '  document.getElementById("pdfModal").classList.remove("open");',
+    '  var se=document.getElementById("rl-explain");var showExp=se&&se.checked;',
+    '  var sel=ch.map(function(id){return"#"+id;}).join(",");',
+    '  var expCSS=showExp?".explain-row{display:table-row!important}.explain-td{font-size:10px;color:#4c1d95;background:#f5f3ff!important;padding:5px 12px 7px 14px!important;border-left:3px solid #7c3aed;font-style:italic}":".explain-row{display:none!important}";',
+    '  var pageBreaks=ch.map(function(id,i){return"#"+id+"{page-break-after:"+(i<ch.length-1?"always":"avoid")+";}";}).join(" ");',
+    '  var css="@media print{body>*{display:none!important}.page-header{display:block!important;margin-bottom:8px}.clinical-note{display:block!important;margin-bottom:12px}"+sel+"{display:block!important}"+pageBreaks+".draw-block{display:block!important;page-break-inside:avoid}.draw-block.hidden{display:block!important}tr.flag-hidden,tr.search-hidden{display:table-row!important}.tbl-wrap{overflow:visible!important;background:none!important}.sort-bar{display:none!important}"+expCSS+"*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}@page{margin:14mm 12mm;size:A4}}";',
+    '  var old=document.getElementById("pdf-print-style");if(old)old.parentNode.removeChild(old);',
+    '  var s=document.createElement("style");s.id="pdf-print-style";s.innerHTML=css;document.head.appendChild(s);',
+    '  setTimeout(function(){window.print();setTimeout(function(){var s2=document.getElementById("pdf-print-style");if(s2)s2.parentNode.removeChild(s2);},5000);},150);',
+    '}',
+    'function initAll(){',
+    '  var wrap=document.querySelector(".tab-bar-wrap");',
+    '  if(wrap){',
+    '    wrap.addEventListener("click",function(e){',
+    '      var b=e.target; while(b&&!b.classList.contains("tab-btn"))b=b.parentElement;',
+    '      if(b&&b.dataset.tab){e.preventDefault();showTab(b.dataset.tab);}',
+    '    });',
+    '  }',
+    '  var pdfFab=document.querySelector(".fab-pdf");',
+    '  if(pdfFab) pdfFab.addEventListener("click",function(){document.getElementById("pdfModal").classList.add("open");});',
+    '  document.querySelectorAll(".btn-cancel[data-close]").forEach(function(btn){',
+    '    btn.addEventListener("click",function(){document.getElementById(btn.getAttribute("data-close")).classList.remove("open");});',
+    '  });',
+    '  var genPDF=document.querySelector(".btn-pdf");',
+    '  if(genPDF) genPDF.addEventListener("click",generatePDF);',
+    '  var mo=document.querySelectorAll(".modal-overlay");',
+    '  mo.forEach(function(m){m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});});',
+    '  var rlS=document.getElementById("rl-sort"); if(rlS)rlS.addEventListener("change",applyRawSort);',
+    '  var rlP=document.getElementById("rl-provider"); if(rlP)rlP.addEventListener("change",applyRawSort);',
+    '  var rlF=document.getElementById("rl-flagged"); if(rlF)rlF.addEventListener("change",applyRawSort);',
+    '  var rlSr=document.getElementById("rl-search"); if(rlSr)rlSr.addEventListener("input",applyRawSort);',
+    '  var rlE=document.getElementById("rl-explain"); if(rlE)rlE.addEventListener("change",toggleExplain);',
+    '}',
+    'initAll();',
+  ].join('\n') + '\n' + sc2;
+
+  const pdfModalHTML = '<div id="pdfModal" class="modal-overlay">'
+    + '<div class="modal">'
+    + '<h3>&#128196; Print / Save as PDF</h3>'
+    + '<p>Opens a print-ready document &mdash; use <strong>Print &rarr; Save as PDF</strong>.</p>'
+    + '<div class="modal-checks">' + pdfChecks + '</div>'
+    + '<div class="modal-actions">'
+    + '<button class="btn-cancel" data-close="pdfModal">Cancel</button>'
+    + '<button class="btn-generate btn-pdf">&#128247; Open Print View</button>'
+    + '</div></div></div>';
+
+  const fabHTML = '<div class="fab-group"><button class="fab fab-pdf" title="Print / Save PDF">&#128196;</button></div>';
+
+  const parts = [
+    '<!DOCTYPE html>',
+    '<html lang="en">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+    '<title>Lab Dashboard \u2014 John Lazzaro</title>',
+    '<style>' + css + '.fab-gear{display:none!important}</style>',
+    '</head>',
+    '<body>',
+    headerHTML,
+    noteHTML,
+    '<div class="tab-bar-wrap"><nav class="tab-bar">',
+    '  ' + btnHTML,
+    '</nav></div>',
+    panesHTML,
+    fabHTML,
+    pdfModalHTML,
+    inlineJS,
+  ];
+
+  const fullHTML = parts.join('\n');
+  const blob = new Blob([fullHTML], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lazzaro_labs_export.html';
+  a.click();
+  document.getElementById('settingsModal').classList.remove('open');
+}
+</script>
+<script>
+// Init after DOM is parsed — called synchronously here, no DOMContentLoaded needed
+initTabs();
+initButtons();
+</script>
+
+<script>
+// ── RESTORE / IMPORT ──────────────────────────────────────────
+function restoreBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      const tabs = ['summary','lipids','metabolic','cbc','hormones','nutrients','autoimmune','infectious','urinalysis','rawlabs'];
+      let restored = 0;
+      tabs.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el && data[id]) {
+          el.innerHTML = data[id];
+          restored++;
+        }
+      });
+      if (restored === 0) {
+        alert('No matching tabs found in backup. Make sure this is a valid labs_backup.json file.');
+        return;
+      }
+      // Restore tab badges
+      if (data._tabBadges) {
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+          // Remove any existing badge
+          var existing = btn.querySelector('.tab-badge');
+          if (existing) existing.remove();
+          var tabId = btn.dataset.tab;
+          if (tabId && data._tabBadges[tabId]) {
+            var b = data._tabBadges[tabId];
+            var span = document.createElement('span');
+            span.className = 'tab-badge ' + b.cls;
+            span.textContent = b.count;
+            btn.appendChild(span);
+          }
+        });
+      }
+      // Restore header meta if present in backup
+      if (data._header) {
+        var hm = document.getElementById('header-meta');
+        if (hm) hm.innerHTML = data._header;
+      }
+      // Restore clinical note if present in backup
+      if (data._clinicalNote) {
+        var cn = document.getElementById('clinical-note-bar');
+        if (cn) { cn.innerHTML = data._clinicalNote; cn.style.display = ''; }
+      }
+      // Re-wire sort bar controls (they live inside restored HTML)
+      var rlSort = document.getElementById('rl-sort');
+      var rlProvider = document.getElementById('rl-provider');
+      var rlFlagged = document.getElementById('rl-flagged');
+      var rlSearch = document.getElementById('rl-search');
+      var rlExplain = document.getElementById('rl-explain');
+      if (rlSort) rlSort.addEventListener('change', applyRawSort);
+      if (rlProvider) rlProvider.addEventListener('change', applyRawSort);
+      if (rlFlagged) rlFlagged.addEventListener('change', applyRawSort);
+      if (rlSearch) rlSearch.addEventListener('input', applyRawSort);
+      if (rlExplain) rlExplain.addEventListener('change', toggleExplain);
+      // Re-wire PDF generate button (inside restored HTML if any)
+      var genPDF = document.querySelector('.btn-pdf');
+      if (genPDF && !genPDF._bound) { genPDF._bound = true; genPDF.addEventListener('click', generatePDF); }
+      // Activate summary tab to show restored content
+      showTab('summary');
+      // Show success toast
+      showToast('✅ Lab data restored — ' + restored + ' tabs loaded');
+    } catch(err) {
+      alert('Invalid backup file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function showToast(msg) {
+  let t = document.getElementById('restore-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'restore-toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#16a34a;color:white;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);transition:opacity 0.4s;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  setTimeout(function() { t.style.opacity = '0'; }, 3500);
+}
+
+// Drag-and-drop support
+document.addEventListener('DOMContentLoaded', function() {
+  document.body.addEventListener('dragover', function(e) { e.preventDefault(); });
+  document.body.addEventListener('drop', function(e) {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.json')) {
+      const fakeInput = { files: [file] };
+      restoreBackup(fakeInput);
+    }
+  });
+});
+</script>
+
+</body>
+</html>
