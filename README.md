@@ -1,4 +1,4 @@
-#                               Clinical Labs Dashboard
+#Clinical Labs Dashboard
 Clinical Laboratory Dashboard
 Your entire lab history, finally readable.
 CLD turns years of scattered PDFs, portals, and paper results into one longitudinal record — every draw, every marker, tracked side by side so trends jump out instead of hiding across a dozen disconnected reports.
