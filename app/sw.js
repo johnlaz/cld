@@ -1,7 +1,7 @@
 /* CLD service worker. Bump VERSION on release to drop old caches.
    Same-origin GETs only: calls to api.groq.com are never touched or cached. */
 const VERSION = 'cld-v1.0.0';
-const SHELL = ['./', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
+const SHELL = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
