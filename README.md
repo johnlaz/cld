@@ -7,11 +7,11 @@ Built for physician review, not self-diagnosis.
 ## Layout
 
 ```
-/                      landing page (index.html)
+/                      landing page (index.html, self-contained: icons embedded, no external files or fonts)
 /app/index.html        the app (single-file PWA)
 /app/manifest.webmanifest
 /app/sw.js             service worker, scope /app/
-/app/icons/            PWA icons (192, 512, maskable, apple-touch, favicons, 1024 source)
+/app/*.png             PWA icons (icon-192/512, icon-maskable-512, apple-touch-icon, favicon-32/48, icon-1024 source)
 /.nojekyll
 ```
 
@@ -19,6 +19,12 @@ Built for physician review, not self-diagnosis.
 
 Settings → Pages → Deploy from branch → `main` / root. The landing page is the site root and the app lives at `/app/`.
 All paths are relative, so it works under a project subpath or a custom domain.
+
+## Icons
+
+The landing page embeds its own icons, so it needs no image files.
+The app needs real PNG files in `/app/` (browsers won't install from embedded icons):
+`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`. `favicon-32/48.png` are optional, and `icon-1024.png` is only a source image.
 
 ## Releasing an update
 
